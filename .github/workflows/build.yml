@@ -1,0 +1,38 @@
+# Builds the Pearl mining image on GitHub's servers and publishes it to
+# ghcr.io/<your-github-name>/pearl-miner:latest. No Docker needed on your PC.
+# Put this file in your repository at:  .github/workflows/build.yml
+name: build image
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name (must be lowercase)
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "IMAGE=ghcr.io/${OWNER,,}/pearl-miner:latest" >> "$GITHUB_ENV"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}
+
+      - name: Show the image name to use on clore.ai
+        run: echo "Use this image on clore.ai -> $IMAGE"
